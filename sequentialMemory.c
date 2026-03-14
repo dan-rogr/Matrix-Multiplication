@@ -10,7 +10,7 @@ int main() {
     int tamanos[] = {400, 800, 1600, 3200};
     int num_tamanos = 4;
 
-    FILE *archivo = fopen("resultados_secuencial_compilador.csv", "w");
+    FILE *archivo = fopen("resultados_secuencial_memoria.csv", "w");
 
     if(archivo == NULL){
         printf("Error al crear el archivo CSV\n");
@@ -28,20 +28,22 @@ int main() {
 
         for(int prueba = 1; prueba <= NUM_PRUEBAS; prueba++){
 
-            int **A, **B, **C;
+            int **A, **B, **BT, **C;
 
             clock_t inicio, fin;
             double tiempo;
 
             // Reservar memoria
-            A = (int **)malloc(N * sizeof(int *));
-            B = (int **)malloc(N * sizeof(int *));
-            C = (int **)malloc(N * sizeof(int *));
+            A = malloc(N * sizeof(int *));
+            B = malloc(N * sizeof(int *));
+            BT = malloc(N * sizeof(int *));
+            C = malloc(N * sizeof(int *));
 
             for(int i = 0; i < N; i++){
-                A[i] = (int *)malloc(N * sizeof(int));
-                B[i] = (int *)malloc(N * sizeof(int));
-                C[i] = (int *)malloc(N * sizeof(int));
+                A[i] = malloc(N * sizeof(int));
+                B[i] = malloc(N * sizeof(int));
+                BT[i] = malloc(N * sizeof(int));
+                C[i] = malloc(N * sizeof(int));
             }
 
             // Inicializar matrices
@@ -53,14 +55,25 @@ int main() {
                 }
             }
 
-            inicio = clock();
-
-            // Multiplicación de matrices
+            // Calcular transpuesta de B
             for(int i = 0; i < N; i++){
                 for(int j = 0; j < N; j++){
+                    BT[j][i] = B[i][j];
+                }
+            }
+
+            inicio = clock();
+
+            // Multiplicación optimizada con transpuesta
+            for(int i = 0; i < N; i++){
+                for(int j = 0; j < N; j++){
+                    int suma_local = 0;
+
                     for(int k = 0; k < N; k++){
-                        C[i][j] += A[i][k] * B[k][j];
+                        suma_local += A[i][k] * BT[j][k];
                     }
+
+                    C[i][j] = suma_local;
                 }
             }
 
@@ -78,23 +91,26 @@ int main() {
             for(int i = 0; i < N; i++){
                 free(A[i]);
                 free(B[i]);
+                free(BT[i]);
                 free(C[i]);
             }
 
             free(A);
             free(B);
+            free(BT);
             free(C);
         }
 
         double promedio = suma / NUM_PRUEBAS;
 
         fprintf(archivo, "%d,promedio,%f\n", N, promedio);
+
         printf("Promedio N=%d -> %f s\n\n", N, promedio);
     }
 
     fclose(archivo);
 
-    printf("Resultados guardados en resultados_secuencial.csv\n");
+    printf("Resultados guardados en resultados_secuencial_memoria.csv\n");
 
     return 0;
 }
